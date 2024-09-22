@@ -1,0 +1,6 @@
+# .venv 폴더 제외
+.venv/
+# build 폴더 제외
+build/
+# dist 폴더 제외
+dist/

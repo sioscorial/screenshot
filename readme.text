@@ -1,0 +1,4 @@
+실행방법
+pyinstaller --onefile --windowed --icon=MacJu.ico --add-data "MacJu.ico;." MacJu.py
+
+dist 폴더에 exe파일 생성 -> 사용
