@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import pyautogui
-from PIL import ImageGrab
+from PIL import ImageGrab, ImageTk
 import os
 from datetime import datetime
 import winreg  # 레지스트리 모듈
@@ -13,6 +12,7 @@ start_y = None
 end_x = None
 end_y = None
 save_directory = None  # 저장 경로를 저장할 변수
+screenshot = None  # 전체 스크린샷을 저장할 변수
 registry_key = r"Software\ScreenshotProgram"  # 레지스트리 키
 
 # 리소스 경로를 찾아주는 함수
@@ -103,19 +103,25 @@ def on_button_release(event):
 
 def on_mouse_move(event):
     canvas.delete("selection")
-    canvas.create_rectangle(start_x, start_y, event.x, event.y, outline="red", tag="selection")
+    # 빨간색 테두리로 영역을 그리기
+    canvas.create_rectangle(start_x, start_y, event.x, event.y, outline="red", width=1, tag="selection")
 
 def capture_area():
     if save_directory:  # 저장 경로가 설정되어 있을 때만 실행
-        global capture_window, canvas
+        global capture_window, canvas, screenshot
+        # 전체 화면 스크린샷 찍기
+        screenshot = ImageGrab.grab()
+
         # Tkinter 캡처 창 설정
         capture_window = tk.Toplevel(root)
         capture_window.attributes("-fullscreen", True)  # 전체 화면
-        capture_window.attributes("-alpha", 0.3)  # 반투명
-        capture_window.configure(bg="gray")
+        capture_window.attributes("-topmost", True)  # 항상 위에 표시
 
+        # 스크린샷을 Tkinter 창에 표시
+        tk_screenshot = ImageTk.PhotoImage(screenshot)
         canvas = tk.Canvas(capture_window, cursor="cross")
         canvas.pack(fill="both", expand=True)
+        canvas.create_image(0, 0, anchor="nw", image=tk_screenshot)
 
         canvas.bind("<ButtonPress-1>", on_button_press)
         canvas.bind("<B1-Motion>", on_mouse_move)
@@ -130,12 +136,12 @@ def capture_area():
             x2 = max(start_x, end_x)
             y2 = max(start_y, end_y)
             
-            screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2))  # 정확한 좌표가 계산됨
+            cropped_screenshot = screenshot.crop((x1, y1, x2, y2))  # 선택 영역만큼 자르기
             filename = generate_unique_filename("selected_screenshot", "png")  # 고유한 파일 이름 생성
             save_path = os.path.join(save_directory, filename)
             
             try:
-                screenshot.save(save_path)
+                cropped_screenshot.save(save_path)
                 log_message(f"부분 스크린샷이 {save_path}에 저장되었습니다.")
             except Exception as e:
                 log_message(f"스크린샷 저장 중 오류 발생: {e}")
